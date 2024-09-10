@@ -88,7 +88,7 @@ if mode == "Video":
                 video_placeholder.image(io_buf, channels="BGR")
 
                 # Control the frame rate
-                time.sleep(0.03)
+                time.sleep(1)
 
             cap.release()
     
