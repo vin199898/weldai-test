@@ -17,10 +17,12 @@ mode = st.radio(
 )
 
 if mode == "Video":
+    
 
     import streamlit as st
-import tempfile
-import cv2
+    import tempfile
+
+    import cv2
 import time
 from ultralytics import YOLO
 from io import BytesIO
@@ -100,6 +102,8 @@ if st.session_state.uploaded_file is not None:
     # Add a button to stop the video
     if st.button("Stop Video"):
         st.session_state.stop = True
+
+
 
     
   
