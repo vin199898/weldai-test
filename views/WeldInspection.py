@@ -17,80 +17,92 @@ mode = st.radio(
 )
 
 if mode == "Video":
-    
-    # Title of the app
-    st.title("YOLOv8 Object Detection")
 
-    # Initialize session state for the uploaded file and stop button
-    if 'uploaded_file' not in st.session_state:
-        st.session_state.uploaded_file = None
-    if 'stop' not in st.session_state:
+    import streamlit as st
+import tempfile
+import cv2
+import time
+from ultralytics import YOLO
+from io import BytesIO
+import threading
+
+# Title of the app
+st.title("YOLOv8 Object Detection")
+
+# Initialize session state for the uploaded file and stop button
+if 'uploaded_file' not in st.session_state:
+    st.session_state.uploaded_file = None
+if 'stop' not in st.session_state:
+    st.session_state.stop = False
+
+# File uploader
+uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
+
+# Save the uploaded file to session state
+if uploaded_file is not None:
+    st.session_state.uploaded_file = uploaded_file
+
+# Check if a file is uploaded
+if st.session_state.uploaded_file is not None:
+    # Save the uploaded file to a temporary location
+    tfile = tempfile.NamedTemporaryFile(delete=False)
+    tfile.write(st.session_state.uploaded_file.read())
+
+    # Load the YOLOv8 model
+    try:
+        model = YOLO("yolov8n.pt")  # Ensure you have the YOLOv8 weights file
+    except Exception as e:
+        st.error(f"Error loading YOLO model: {e}")
+        st.stop()
+
+    # Open the video file
+    cap = cv2.VideoCapture(tfile.name)
+
+    # Create a placeholder for the video
+    video_placeholder = st.empty()
+
+    def process_frame():
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret or st.session_state.stop:
+                break
+
+            # Perform object detection
+            results = model(frame)
+
+            # Draw bounding boxes and labels on the frame
+            for result in results:
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])  # Ensure only one element tensors are converted to scalars
+                    class_id = int(box.cls)  # Convert tensor to int
+                    confidence = float(box.conf)  # Convert tensor to float
+                    label_text = f"Class {class_id} ({confidence:.2f})"
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(frame, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            # Convert frame to bytes
+            is_success, buffer = cv2.imencode(".jpg", frame)
+            io_buf = BytesIO(buffer)
+
+            # Display the frame with bounding boxes and labels
+            video_placeholder.image(io_buf, channels="BGR")
+
+            # Control the frame rate
+            time.sleep(0.01)  # Adjust this value as needed
+
+        cap.release()
+
+    # Add a button to start object detection
+    if st.button("Detect Objects"):
         st.session_state.stop = False
+        threading.Thread(target=process_frame).start()
 
-    # File uploader
-    uploaded_file = st.file_uploader("Choose a video file", type=["mp4", "mov", "avi", "mkv"])
+    # Add a button to stop the video
+    if st.button("Stop Video"):
+        st.session_state.stop = True
 
-    # Save the uploaded file to session state
-    if uploaded_file is not None:
-        st.session_state.uploaded_file = uploaded_file
-
-    # Check if a file is uploaded
-    if st.session_state.uploaded_file is not None:
-        # Save the uploaded file to a temporary location
-        tfile = tempfile.NamedTemporaryFile(delete=False)
-        tfile.write(st.session_state.uploaded_file.read())
-
-        # Load the YOLOv8 model
-        try:
-            model = YOLO("yolov8n.pt")  # Ensure you have the YOLOv8 weights file
-        except Exception as e:
-            st.error(f"Error loading YOLO model: {e}")
-            st.stop()
-
-        # Open the video file
-        cap = cv2.VideoCapture(tfile.name)
-       
-
-        # Create a placeholder for the video
-        video_placeholder = st.empty()
-
-        # Add a button to start object detection
-        if st.button("Detect Objects"):
-            st.session_state.stop = False
-
-            # Add a button to stop the video
-            if st.button("Stop Video"):
-                st.session_state.stop = True
-
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret or st.session_state.stop:
-                    break
-
-                # Perform object detection
-                results = model(frame)
-
-                # Draw bounding boxes and labels on the frame
-                for result in results:
-                    for box in result.boxes:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])  # Ensure only one element tensors are converted to scalars
-                        class_id = int(box.cls)  # Convert tensor to int
-                        confidence = float(box.conf)  # Convert tensor to float
-                        label_text = f"Class {class_id} ({confidence:.2f})"
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(frame, label_text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-                # Convert frame to bytes
-                is_success, buffer = cv2.imencode(".jpg", frame)
-                io_buf = BytesIO(buffer)
-
-                # Display the frame with bounding boxes and labels
-                video_placeholder.image(io_buf, channels="BGR")
-
-                # Control the frame rate
-                time.sleep(0.03)
-
-            cap.release()
+    
+  
     
     
     
