@@ -17,7 +17,9 @@ mode = st.radio(
 )
 
 if mode == "Video":
-        st.title("YOLOv8 Object Detection")
+    
+    
+    st.title("YOLOv8 Object Detection")
 
     # Initialize session state for the uploaded file and stop button
     if 'uploaded_file' not in st.session_state:
