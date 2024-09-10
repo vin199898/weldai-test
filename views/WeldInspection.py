@@ -9,10 +9,7 @@ from io import BytesIO
 import time
 
 
-
-
-
-st.title("Weld Inspection Tool")  # Adding header to sidebar
+st.title("Weld Defect Dectector")  # Adding header to sidebar
 
 mode = st.radio(
     "Select source type:",
@@ -121,7 +118,7 @@ else:
      if 'detection_results' not in st.session_state:
          st.session_state.detection_results = None
 
-     model_path = r'C:\Users\harvi\Weld\views\yolov8n.pt'
+     model_path = YOLO("yolov8n.pt")
 
      # File uploader
      source_img = st.file_uploader("Upload an image or take a picture", type=("jpg", "jpeg", "png", 'bmp', 'webp'))
@@ -145,7 +142,7 @@ else:
                       )
 
      try:
-         model = YOLO(model_path)
+         model = model_path
      except Exception as ex:
          st.error(f"Unable to load model. Check the specified path: {model_path}")
          st.error(ex)
